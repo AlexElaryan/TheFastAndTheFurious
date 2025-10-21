@@ -1,0 +1,25 @@
+header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+header nav {
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+header .lk>img {
+    width: 130px;
+    border-radius: 12px;
+}
+
+header nav a {
+    text-decoration: none;
+}
+
+header nav a:hover {
+    box-shadow: inset 0px 0px 25px #f13430;
+}
