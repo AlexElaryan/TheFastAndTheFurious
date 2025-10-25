@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/TheFastAndTheFurious/static/css/main.7a7b0d80.css",
+    "main.js": "/TheFastAndTheFurious/static/js/main.91823512.js",
+    "static/media/logo.png": "/TheFastAndTheFurious/static/media/logo.4b429fc5d57b72f7a252.png",
+    "static/media/background.jpg": "/TheFastAndTheFurious/static/media/background.3863512bc63079b04de7.jpg",
+    "index.html": "/TheFastAndTheFurious/index.html",
+    "main.7a7b0d80.css.map": "/TheFastAndTheFurious/static/css/main.7a7b0d80.css.map",
+    "main.91823512.js.map": "/TheFastAndTheFurious/static/js/main.91823512.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.7a7b0d80.css",
+    "static/js/main.91823512.js"
+  ]
+}
