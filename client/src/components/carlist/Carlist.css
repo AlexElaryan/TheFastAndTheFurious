@@ -54,6 +54,8 @@
     display: flex;
     flex-direction: column;
     gap: 5px;
+    z-index: 1;
+    position: relative;
 }
 
 .car-item_left button {

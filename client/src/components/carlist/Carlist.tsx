@@ -44,13 +44,14 @@ const Carlist: React.FC = () => {
             window.removeEventListener('resize', updateLength);
             clearTimeout(timer);
         };
-    }, [roadLength, resetRoadLength, setRoadLength]);
+    }, [cars, roadLength, resetRoadLength, setRoadLength]);
 
     useEffect(() => {
         if (!resetRoadLength) {
             const newLength = middleLength + 40;
             setRoadLength(newLength);
         }
+        
     }, [middleLength, resetRoadLength, setRoadLength]);
 
     return (
@@ -61,12 +62,12 @@ const Carlist: React.FC = () => {
                         <li key={car.id} className='car-item'>
                             <div className="car-item_left">
                                 <div>
-                                    <button className={`button-type-1 blue-btn ${selectedCarId === car.id ? 'active' : ''} ${car.engine === 'started' ? 'disabled' : ''}`} onClick={() => setSelectedCarId(car.id)}>Select</button>
-                                    <button className={`button-type-1 purple-btn ${car.engine === 'started' ? 'disabled' : ''}`} onClick={() => deleteCar(car.id)}>Remove</button>
+                                    <button className={`button-type-1 blue-btn ${selectedCarId === car.id ? 'active' : ''} ${car.engine === 'drive' ? 'disabled' : ''}`} onClick={() => setSelectedCarId(car.id)}>Select</button>
+                                    <button className={`button-type-1 purple-btn ${car.engine === 'drive' ? 'disabled' : ''}`} onClick={() => deleteCar(car.id)}>Remove</button>
                                 </div>
                                 <div>
-                                    <button className={`button-type-1 yellow-btn ${car.engine === 'started' ? 'disabled' : ''}`} onClick={() => startEngine(car.id, getCarRef(car.id))} >A</button>
-                                    <button className={`button-type-1 gray-btn ${car.engine === 'stopped' ? 'disabled' : ''} ${car.engine === 'started' ? 'active' : ''}`} onClick={() => stopEngine(car.id)}>B</button>
+                                    <button className={`button-type-1 yellow-btn ${car.engine === 'drive' ? 'disabled' : ''}`} onClick={() => startEngine(car.id, getCarRef(car.id), null)} >A</button>
+                                    <button className={`button-type-1 gray-btn ${car.engine === 'stopped' ? 'disabled' : ''} ${car.engine === 'drive' ? 'active' : ''}`} onClick={() => stopEngine(car.id)}>B</button>
                                 </div>
                                 <div
                                     className='car-item_track'
@@ -75,7 +76,7 @@ const Carlist: React.FC = () => {
                                 </div>
                             </div>
                             <div className="car-item_middle" ref={carMiddleRef}>
-                                <p style={{color: car.color}}>{car.name}</p>
+                                <p style={{ color: car.color }}>{car.name}</p>
                             </div>
                             <div className="car-item_right"></div>
                         </li>

@@ -4,6 +4,7 @@
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
+    gap: 20px;
 }
 
 .filter-item {
@@ -18,4 +19,11 @@
 .color {
     width: 30px;
     height: 30px;
+}
+
+.filter-block {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
 }

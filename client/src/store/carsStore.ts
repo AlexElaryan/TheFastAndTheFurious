@@ -4,10 +4,8 @@ interface Car {
     id: number;
     name: string;
     color: string;
-    engine: 'stopped' | 'started' | 'drive';
+    engine?: 'stopped' | 'drive' | 'started';
     animationFrameId?: number;
-    position?: number;
-    velocity?: number;
 }
 
 interface CarsStore {
@@ -41,7 +39,7 @@ interface CarsStore {
     createCar: (name: string, color: string, engine?: 'stopped' | 'started' | 'drive') => Promise<void>;
     updateCar: (id: number | null, name: string, color: string) => Promise<void>;
     deleteCar: (id: number) => Promise<void>;
-    startEngine: (id: number, ref: React.RefObject<HTMLDivElement> | null) => Promise<void>;
+    startEngine: (id: number, ref: React.RefObject<HTMLDivElement> | null, raceStartTime: number | null) => Promise<void>;
     stopEngine: (id: number) => Promise<void>;
     startRace: () => Promise<void>;
     resetRace: () => Promise<void>;
@@ -50,7 +48,7 @@ interface CarsStore {
 }
 
 export const useCarsStore = create<CarsStore>((set, get) => ({
-    apiUrl: 'http://localhost:3000/garage',
+    apiUrl: 'https://thefastandthefurious.onrender.com',
     cars: [],
     page: 1,
     brands: ['BMW', 'Audi', 'Mercedes', 'Toyota', 'Honda', 'Ford', 'Nissan', 'Chevrolet', 'Lexus', 'Volkswagen'],
@@ -128,7 +126,7 @@ export const useCarsStore = create<CarsStore>((set, get) => ({
 
     fetchCars: async (page) => {
         try {
-            const res = await fetch(get().apiUrl);
+            const res = await fetch(`${get().apiUrl}/garage`);
             const data = await res.json();
             const total = data.length;
 
@@ -170,15 +168,23 @@ export const useCarsStore = create<CarsStore>((set, get) => ({
             color: getRandomColor(),
         }));
 
-        await Promise.all(randomCars.map(car =>
-            fetch(get().apiUrl, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(car)
-            })
-        ));
+        try {
+            await Promise.all(randomCars.map(car =>
+                fetch(`${get().apiUrl}/garage`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(car)
+                })
+            ));
+        } catch (error) {
+            console.error('Generating Cars failed', error);
+        }
         set({ resetRoadLength: true });
 
-        await get().fetchCars(get().page);
+        try {
+            await get().fetchCars(get().page);
+        } catch (error) {
+            console.error('Fetching Cars in Generate failed', error);
+        }
 
         setTimeout(() => {
             set({ resetRoadLength: false });
@@ -193,18 +199,35 @@ export const useCarsStore = create<CarsStore>((set, get) => ({
     },
 
     createCar: async (name, color) => {
-        await fetch(get().apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, color }) });
-        await get().fetchCars(get().page);
+        try {
+            await fetch(`${get().apiUrl}/garage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, color }) });
+            await get().fetchCars(get().page);
+        } catch (err) {
+            console.error('Creating Car Failed', err);
+        }
     },
 
     updateCar: async (id, name, color) => {
         if (id === null) return;
-        await fetch(`${get().apiUrl}/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, color }) });
-        await get().fetchCars(get().page);
+        try {
+            await fetch(`${get().apiUrl}/garage/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, color }) });
+            await get().fetchCars(get().page);
+            get().setSelectedCarId(null);
+
+        } catch (err) {
+            console.error('Car Updating failed', err);
+        }
     },
 
     deleteCar: async (id) => {
-        await fetch(`${get().apiUrl}/${id}`, { method: 'DELETE' });
+        try {
+            await fetch(`${get().apiUrl}/garage/${id}`, { method: 'DELETE' });
+            if (get().winners.length > 0) {
+                await fetch(`${get().apiUrl}/winners/${id}`, { method: 'DELETE' })
+            }
+        } catch (error) {
+            console.error('Deleting car failed', error);
+        }
 
         const carToDelete = get().cars.find(car => car.id === id);
 
@@ -221,9 +244,9 @@ export const useCarsStore = create<CarsStore>((set, get) => ({
             totalCount: get().totalCount - 1
         });
 
-        if (get().cars.length === 0 && Math.ceil(get().totalCount / 7) || 1 > 1) {
+        if (get().cars.length === 0 && (Math.ceil(get().totalCount / 7) > 1)) {
             if (get().page === 1) {
-                get().setPage((Math.ceil(get().totalCount / 7) || 1) - 1);
+                get().setPage((Math.ceil(get().totalCount / 7) || 1));
             }
             else {
                 get().setPage(get().page - 1);
@@ -231,19 +254,19 @@ export const useCarsStore = create<CarsStore>((set, get) => ({
         }
     },
 
-    startEngine: async (id, ref) => {
+    startEngine: async (id, ref, raceStartTime) => {
         const { cars, carRefs, roadLength } = get();
 
         await get().stopEngine(id);
 
         try {
-            const startRes = await fetch(`http://localhost:3000/engine?id=${id}&status=started`, {
+            const startRes = await fetch(`${get().apiUrl}/engine?id=${id}&status=started`, {
                 method: 'PATCH'
             });
 
             if (!startRes.ok) throw new Error('Failed to start engine');
-
             const data = await startRes.json();
+
 
             const carRef = ref?.current ? ref : carRefs[id];
             if (!carRef?.current) {
@@ -257,7 +280,6 @@ export const useCarsStore = create<CarsStore>((set, get) => ({
             if (roadLength > 0 && data.velocity > 0) {
                 const duration = data.distance / data.velocity;
                 const startTime = Date.now();
-
                 const animateCar = () => {
                     const currentTime = Date.now();
                     const elapsed = currentTime - startTime;
@@ -266,32 +288,40 @@ export const useCarsStore = create<CarsStore>((set, get) => ({
 
                     carItem.style.transform = `translateX(${currentPosition}px)`;
 
-                    const currentCar = get().cars.find(c => c.id === id);
-
-                    if (progress < 1 && currentCar?.engine === 'started') {
-                        const animationFrameId = requestAnimationFrame(animateCar);
+                    if (progress < 1) {
+                        const animationFrame = requestAnimationFrame(animateCar);
                         set(state => ({
                             cars: state.cars.map(c =>
-                                c.id === id ? { ...c, animationFrameId, position: currentPosition } : c
+                                c.id === id ? { ...c, engine: 'drive', animationFrameId: animationFrame } : c
                             )
                         }));
                     } else if (progress >= 1) {
+                        const car = get().cars.find(c => c.id === id);
+
+                        if (car?.animationFrameId) {
+                            cancelAnimationFrame(car.animationFrameId);
+                        }
                         set(state => ({
                             cars: state.cars.map(c =>
-                                c.id === id ? { ...c, engine: 'drive', animationFrameId: undefined } : c
+                                c.id === id ? { ...c, engine: 'stopped', animationFrameId: undefined } : c
                             )
                         }));
+
                         if (get().raceInProgress === true) {
-                            const finishedTime = elapsed / 1000;
+                            const finishedTime = (Date.now() - raceStartTime!) / 1000;
                             const currentWinners = get().winners;
                             if (!currentWinners.find(w => w.id === id)) {
-                                const car = get().cars.find(c => c.id === id);
+                                const car = cars.find(c => c.id === id);
                                 if (car) {
                                     const newWinner = {
                                         id,
                                         name: car.name,
                                         time: parseFloat(finishedTime.toFixed(2))
                                     };
+                                    const winRes = async () => await fetch(`${get().apiUrl}/winner`, {
+                                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify(newWinner)
+                                    })
                                     set({ winners: [...currentWinners, newWinner] });
                                 }
                             }
@@ -301,32 +331,34 @@ export const useCarsStore = create<CarsStore>((set, get) => ({
 
                 const animationFrameId = requestAnimationFrame(animateCar);
 
-                set(state => ({
-                    cars: state.cars.map(c =>
-                        c.id === id ? { ...c, engine: 'started', animationFrameId, velocity: data.velocity } : c
-                    )
-                }));
-
                 try {
-                    const driveRes = await fetch(`http://localhost:3000/engine?id=${id}&status=drive`, {
+                    const driveRes = await fetch(`${get().apiUrl}/engine?id=${id}&status=drive`, {
                         method: 'PATCH',
                     });
 
                     if (!driveRes.ok) {
-                        const currentCar = get().cars.find(c => c.id === id);
-                        if (currentCar?.animationFrameId) {
-                            cancelAnimationFrame(currentCar.animationFrameId);
-                        }
+                        const car = get().cars.find(c => c.id === id);
 
-                        if (carRef.current) {
-                            carRef.current.style.opacity = '0.5';
+                        if (car?.animationFrameId) {
+                            cancelAnimationFrame(car.animationFrameId);
                         }
-
                         set(state => ({
                             cars: state.cars.map(c =>
                                 c.id === id ? { ...c, engine: 'stopped', animationFrameId: undefined } : c
                             )
                         }));
+                        if (carRef?.current) {
+
+                            carRef.current.style.opacity = '0.5';
+                        }
+
+                        try {
+                            const stopRes = await fetch(`${get().apiUrl}/engine?id=${id}&status=stopped`, {
+                                method: 'PATCH',
+                            });
+                        } catch (err) {
+                            console.error('Stop mode failed after trying to set mode drive in start engine', err);
+                        }
                     }
                 } catch (error) {
                     console.error('Drive mode failed:', error);
@@ -349,16 +381,17 @@ export const useCarsStore = create<CarsStore>((set, get) => ({
         const carRef = get().carRefs[id];
         if (carRef?.current) {
             carRef.current.style.transform = 'translateX(0)';
+            carRef.current.style.opacity = '1';
         }
 
         set(state => ({
             cars: state.cars.map(c =>
-                c.id === id ? { ...c, engine: 'stopped', animationFrameId: undefined, position: 0 } : c
+                c.id === id ? { ...c, engine: 'stopped', animationFrameId: undefined } : c
             )
         }));
 
         try {
-            await fetch(`http://localhost:3000/engine?id=${id}&status=stopped`, {
+            await fetch(`${get().apiUrl}/engine?id=${id}&status=stopped`, {
                 method: 'PATCH',
             });
         } catch (error) {
@@ -369,18 +402,30 @@ export const useCarsStore = create<CarsStore>((set, get) => ({
     startRace: async () => {
         if (get().cars.length > 0) {
             set({ winners: [], raceInProgress: true });
-            await Promise.all(
-                get().cars.map(car => {
-                    return get().startEngine(car.id, get().getCarRef(car.id));
-                })
-            );
+
+            const raceStartTime: number = Date.now();
+
+            try {
+                await Promise.all(
+                    get().cars.map(car => {
+                        return get().startEngine(car.id, get().getCarRef(car.id), raceStartTime);
+                    })
+                );
+            } catch (error) {
+                console.error('Start Race failed:', error);
+            }
         }
     },
 
     resetRace: async () => {
         set({ raceInProgress: false, winners: [] });
-        await Promise.all(
-            get().cars.map(car => get().stopEngine(car.id))
-        );
+        try {
+            await Promise.all(
+                get().cars.map(car => get().stopEngine(car.id))
+            );
+        } catch (error) {
+            console.error('Reset Race failed', error);
+        }
+
     },
 }));
