@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/static/css/main.0f7bd9f5.css",
-    "main.js": "/static/js/main.430aca12.js",
-    "static/media/logo.png": "/static/media/logo.4b429fc5d57b72f7a252.png",
-    "static/media/background.jpg": "/static/media/background.3863512bc63079b04de7.jpg",
-    "index.html": "/index.html",
-    "main.0f7bd9f5.css.map": "/static/css/main.0f7bd9f5.css.map",
-    "main.430aca12.js.map": "/static/js/main.430aca12.js.map"
+    "main.css": "/TheFastAndTheFurious/static/css/main.44e8eded.css",
+    "main.js": "/TheFastAndTheFurious/static/js/main.40c80601.js",
+    "static/media/logo.png": "/TheFastAndTheFurious/static/media/logo.4b429fc5d57b72f7a252.png",
+    "static/media/background.jpg": "/TheFastAndTheFurious/static/media/background.3863512bc63079b04de7.jpg",
+    "index.html": "/TheFastAndTheFurious/index.html",
+    "main.44e8eded.css.map": "/TheFastAndTheFurious/static/css/main.44e8eded.css.map",
+    "main.40c80601.js.map": "/TheFastAndTheFurious/static/js/main.40c80601.js.map"
   },
   "entrypoints": [
-    "static/css/main.0f7bd9f5.css",
-    "static/js/main.430aca12.js"
+    "static/css/main.44e8eded.css",
+    "static/js/main.40c80601.js"
   ]
 }
